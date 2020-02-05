@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import pickle
 from config import PICKLEJAR
 
@@ -62,3 +63,59 @@ def load_pickle(n_objects: int, filename: str):
 
     return objects
 
+
+def to_four_vector(obj: str):
+    """
+    Makes a 4-vector of the given string object, where each value is separated
+    by a comma, in the form of:
+    obj, E, pt, eta, phi
+    :param obj:
+    :return: 4D array
+    """
+    return np.asarray(obj.split(",")[-4:], dtype=float)
+
+
+def generate_input_map(event):
+    """
+    Generates an input map based on the given event. All possible objects are:
+    j, b, m, e, g (jet, b-jet, muon, electron, gluon) and will coincide with
+    rows 1 to 5 of the map respectively. Each row can have 8 options max.
+    :return: array containing the first two values MET and METPHI, and flattened
+    5x8x4 array containing the four-vectors of each type.
+    """
+    event_map = np.zeros((5, 13, 4))  # the event map to fill up
+    return_array = np.zeros(2 + 5 * 13 * 4)
+    # TODO: does not distinguish e- and e+, m- and m+ etc. to do?
+    types = ['j', 'b', 'm', 'e', 'g']  # type list to use as filter
+
+    # generate Series object containing all the object types as characters.
+    met, metphi = event[['MET', 'METphi']]
+    if event[1] != 0:
+        type_list = event[3:17].str.slice(stop=1)
+
+        for i in range(len(types)):
+            # find all the indices where a certain type of object is located
+            type_locations = type_list[type_list == types[i]].index
+
+            # store all found objects as four vector in event_map
+            for j, at_loc in enumerate(type_locations):
+                event_map[i][j] = to_four_vector(event[at_loc])
+
+    return_array[:2] = np.array([met, metphi])
+    return_array[2:] = event_map.flatten()
+    return return_array
+
+
+def generate_map_set(df: pd.DataFrame):
+    dataset = np.zeros((len(df), (2 + 5 * 13 * 4)))
+    print("|", end='')
+    for index, row in df.iterrows():
+        if index / len(df) * 100 % 5 == 0:
+            print("█", end='')
+        tmp = generate_input_map(row)
+        dataset[index] = tmp
+    print("|")
+    pickle_object(dataset, "dataset.pkl")
+
+
+ds = load_pickle(1, "dataset.pkl")
