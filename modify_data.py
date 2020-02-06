@@ -83,8 +83,8 @@ def generate_input_map(event):
     :return: array containing the first two values MET and METPHI, and flattened
     5x8x4 array containing the four-vectors of each type.
     """
-    event_map = np.zeros((5, 13, 4))  # the event map to fill up
-    return_array = np.zeros(2 + 5 * 13 * 4)
+    event_map = np.zeros((5, 8, 4))  # the event map to fill up
+    return_array = np.zeros(2 + 5 * 8 * 4)
     # TODO: does not distinguish e- and e+, m- and m+ etc. to do?
     types = ['j', 'b', 'm', 'e', 'g']  # type list to use as filter
 
@@ -99,6 +99,8 @@ def generate_input_map(event):
 
             # store all found objects as four vector in event_map
             for j, at_loc in enumerate(type_locations):
+                if j == 8:
+                    break
                 event_map[i][j] = to_four_vector(event[at_loc])
 
     return_array[:2] = np.array([met, metphi])
@@ -114,8 +116,9 @@ def generate_map_set(df: pd.DataFrame):
         print(bar, end='\r')
         tmp = generate_input_map(row)
         dataset[index] = tmp
-    print("|")
-    pickle_object(dataset, "dataset.pkl")
+
+    print("Saving array to file.")
+    np.savetxt("data/dataset", dataset, fmt='%4e')
 
 
 tvd = load_pickle(1, "df_dataset.pkl")
