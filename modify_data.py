@@ -108,7 +108,7 @@ def generate_input_map(event):
     return return_array
 
 
-def generate_map_set(df: pd.DataFrame):
+def generate_map_set(df: pd.DataFrame, save: bool = False):
     dataset = np.zeros((len(df), (2 + 5 * 8 * 4)))
     print("Converting dataframe to acceptable array.")
     for index, row in df.iterrows():
@@ -116,9 +116,16 @@ def generate_map_set(df: pd.DataFrame):
         print(bar, end='\r')
         dataset[index] = generate_input_map(row)
 
-    print("Saving array to file.")
-    np.savetxt("data/event_map_flattened", dataset, fmt='%4e')
+    if save:
+        print("Saving array to file.")
+        np.savetxt("data/event_map_flattened.txt", dataset, fmt='%4e')
+    else:
+        return dataset
 
 
-def generate_label_set(df: pd.DataFrame):
-    return df['process ID'].as_matrix()
+def generate_label_set(df: pd.DataFrame, save: bool = False):
+    labelset = df['process ID'].as_matrix()
+    if save:
+        np.savetxt("data/labelset.txt", labelset, fmt='%1.0d')
+    else:
+        return labelset
