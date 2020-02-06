@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import pickle
 from config import PICKLEJAR
-
+import progress_bar.progress_bar as pb
 
 def read_in(pickle_result: bool = False):
     # Running the read_csv command once with parameter error_bad_names=False
@@ -107,15 +107,16 @@ def generate_input_map(event):
 
 
 def generate_map_set(df: pd.DataFrame):
-    dataset = np.zeros((len(df), (2 + 5 * 13 * 4)))
-    print("|", end='')
+    dataset = np.zeros((len(df), (2 + 5 * 8 * 4)))
+    print("Converting dataframe to acceptable array.")
     for index, row in df.iterrows():
-        if index / len(df) * 100 % 5 == 0:
-            print("█", end='')
+        bar = pb.percentage_to_bar(index / len(df) * 100)
+        print(bar, end='\r')
         tmp = generate_input_map(row)
         dataset[index] = tmp
     print("|")
     pickle_object(dataset, "dataset.pkl")
 
 
-ds = load_pickle(1, "dataset.pkl")
+tvd = load_pickle(1, "df_dataset.pkl")
+generate_map_set(tvd)
