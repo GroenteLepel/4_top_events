@@ -114,12 +114,11 @@ def generate_map_set(df: pd.DataFrame):
     for index, row in df.iterrows():
         bar = pb.percentage_to_bar(index / len(df) * 100)
         print(bar, end='\r')
-        tmp = generate_input_map(row)
-        dataset[index] = tmp
+        dataset[index] = generate_input_map(row)
 
     print("Saving array to file.")
-    np.savetxt("data/dataset", dataset, fmt='%4e')
+    np.savetxt("data/event_map_flattened", dataset, fmt='%4e')
 
 
-tvd = load_pickle(1, "df_dataset.pkl")
-generate_map_set(tvd)
+def generate_label_set(df: pd.DataFrame):
+    return df['process ID'].as_matrix()
