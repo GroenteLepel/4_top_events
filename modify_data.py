@@ -37,12 +37,35 @@ def change_labels(df):
     #  ttbar with 0 and 4top with 1.
     df['process ID'] = df['process ID'].replace('ttbar', 0)
     df['process ID'] = df['process ID'].replace('4top', 1)
-    return df
 
 
 def pickle_object(obj, filename: str):
     with open("{}{}".format(PICKLEJAR, filename), 'wb') as out_file:
         pickle.dump(obj, out_file)
+
+
+def normalise(data: pd.DataFrame):
+    """
+    Normalise all the data. This replaces the old data.
+    """
+    print("Normalising data.")
+    # Define att for readability
+    normalised = \
+        (data - data.min()) / \
+        (data.max() - data.min())
+    data = normalised.fillna(0)
+
+
+def standardise(data: pd.DataFrame):
+    """
+    Standardise all the data. This replaces the old data.
+    """
+    print("Standardising data.")
+    standardised = \
+        (data - data.mean()) / \
+        data.std()
+
+    data = standardised.fillna(0)
 
 
 def load_pickle(n_objects: int, filename: str):
@@ -84,6 +107,7 @@ def generate_input_map(event):
     5x8x4 array containing the four-vectors of each type.
     """
     event_map = np.zeros((5, 8, 4))  # the event map to fill up
+    # TODO: implement charge
     return_array = np.zeros(2 + 5 * 8 * 4)
     # TODO: does not distinguish e- and e+, m- and m+ etc. to do?
     types = ['j', 'b', 'm', 'e', 'g']  # type list to use as filter
@@ -124,8 +148,21 @@ def generate_map_set(df: pd.DataFrame, save: bool = False):
 
 
 def generate_label_set(df: pd.DataFrame, save: bool = False):
-    labelset = df['process ID'].as_matrix()
+    labelset = np.asarray(df['process ID'].to_numpy())
     if save:
         np.savetxt("data/labelset.txt", labelset, fmt='%1.0d')
     else:
         return labelset
+
+
+def modify_data():
+    tvd = read_in()
+
+    generate_map_set(tvd, save=True)
+    generate_label_set(tvd, save=True)
+
+
+def load_data():
+    dataset = pd.read_csv("data/event_map_flattened.txt", header=None, sep=' ')
+    labelset = pd.read_csv("data/labelset.txt", header=None, sep=' ')
+    return dataset, labelset
