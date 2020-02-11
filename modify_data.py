@@ -121,7 +121,7 @@ def generate_input_map(event):
     """
     # the event map to fill up
     event_map = np.zeros((conf.N_PARTICLES, conf.N_BINS, conf.LEN_VECTOR))
-    return_array = np.zeros(conf.DATA_SIZE)
+    return_array = np.zeros(conf.SIZE_2D)
     types = ['j', 'b', 'm', 'e', 'g']  # type list to use as filter
 
     # generate Series object containing all the object types as characters.
@@ -131,7 +131,7 @@ def generate_input_map(event):
 
         for i in range(len(types)):
             # find all the indices where a certain type of object is located
-            type_locations = type_list[type_list == types[i]].sample(frac=1).index
+            type_locations = type_list[type_list == types[i]].index
 
             # store all found objects as four vector in event_map
             for j, at_loc in enumerate(type_locations):
@@ -140,14 +140,14 @@ def generate_input_map(event):
                 event_map[i][j] = to_four_vector(event[at_loc])
 
     return_array[:2] = np.array([met, metphi])
-    return_array[2:] = event_map.flatten()
+    return_array[conf.N_PARAMS * conf.LEN_VECTOR:] = event_map.flatten()
     return return_array
 
 
 def generate_map_set(df: pd.DataFrame, save: bool = False):
-    filename = "event_map_flattened_shuf.txt"
+    filename = "event_map2d_flattened.txt"
     dataset = \
-        np.zeros((len(df), (conf.DATA_SIZE)))
+        np.zeros((len(df), conf.SIZE_2D))
     print("Converting dataframe to acceptable array.")
     for index, row in df.iterrows():
         bar = pb.percentage_to_bar(index / len(df) * 100)
@@ -179,6 +179,6 @@ def modify_data(map_set: bool = True, label_set: bool = True):
 
 
 def load_data():
-    dataset = pd.read_csv("data/event_map_flattened_shuf.txt", header=None, sep=' ')
+    dataset = pd.read_csv("data/event_map2d_flattened.txt", header=None, sep=' ')
     labelset = pd.read_csv("data/labelset.txt", header=None, sep=' ')
     return dataset, labelset
