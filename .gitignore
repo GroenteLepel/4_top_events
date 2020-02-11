@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 /.idea/
 /data/picklejar/dataset.pkl
+/data/event_map_flattened.txt
+/data/labelset.txt
