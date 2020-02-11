@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
 import pickle
-from config import PICKLEJAR
+import config as conf
 import progress_bar.progress_bar as pb
+
 
 def read_in(pickle_result: bool = False):
     # Running the read_csv command once with parameter error_bad_names=False
@@ -14,7 +15,7 @@ def read_in(pickle_result: bool = False):
     objects = list(range(1, 14))
 
     df = pd.read_csv("data/TrainingValidationData.csv", sep=';', header=None,
-                      names=header+objects)
+                     names=header + objects)
     df = df.fillna(0)  # zero-padding the empty columns
     change_labels(df)  # change the labels from ttbar and 4top to 0 and 1
     df = df.drop(columns=['event ID', 'event weight'])
@@ -40,7 +41,7 @@ def change_labels(df):
 
 
 def pickle_object(obj, filename: str):
-    with open("{}{}".format(PICKLEJAR, filename), 'wb') as out_file:
+    with open("{}{}".format(conf.PICKLEJAR, filename), 'wb') as out_file:
         pickle.dump(obj, out_file)
 
 
@@ -77,7 +78,7 @@ def load_pickle(n_objects: int, filename: str):
     :return: the unpickled objects.
     """
     objects = [None] * n_objects
-    with open("{}{}".format(PICKLEJAR, filename), 'rb') as in_file:
+    with open("{}{}".format(conf.PICKLEJAR, filename), 'rb') as in_file:
         for n in range(n_objects):
             objects[n] = pickle.load(in_file)
 
@@ -91,25 +92,36 @@ def to_four_vector(obj: str):
     """
     Makes a 4-vector of the given string object, where each value is separated
     by a comma, in the form of:
-    obj, E, pt, eta, phi
+    obj, E, pt, eta, phi,
+    and returns a 5D array containing the charge at the first element, then the
+    four vector.
     :param obj:
-    :return: 4D array
+    :return: 5D array
     """
-    return np.asarray(obj.split(",")[-4:], dtype=float)
+    # look at the second character in the string if the object contains a
+    #  charge
+    if obj[1] == '+':
+        charge = np.array([1])
+    elif obj[1] == '-':
+        charge = np.array([-1])
+    else:
+        charge = np.array([0])
+    four_vector = np.asarray(obj.split(",")[-4:], dtype=float)
+
+    return np.concatenate((charge, four_vector))
 
 
 def generate_input_map(event):
     """
     Generates an input map based on the given event. All possible objects are:
-    j, b, m, e, g (jet, b-jet, muon, electron, gluon) and will coincide with
+    j, b, m, e, p (jet, b-jet, muon, electron, photon) and will coincide with
     rows 1 to 5 of the map respectively. Each row can have 8 options max.
     :return: array containing the first two values MET and METPHI, and flattened
     5x8x4 array containing the four-vectors of each type.
     """
-    event_map = np.zeros((5, 8, 4))  # the event map to fill up
-    # TODO: implement charge
-    return_array = np.zeros(2 + 5 * 8 * 4)
-    # TODO: does not distinguish e- and e+, m- and m+ etc. to do?
+    # the event map to fill up
+    event_map = np.zeros((conf.N_PARTICLES, conf.N_BINS, conf.LEN_VECTOR))
+    return_array = np.zeros(conf.DATA_SIZE)
     types = ['j', 'b', 'm', 'e', 'g']  # type list to use as filter
 
     # generate Series object containing all the object types as characters.
@@ -119,11 +131,11 @@ def generate_input_map(event):
 
         for i in range(len(types)):
             # find all the indices where a certain type of object is located
-            type_locations = type_list[type_list == types[i]].index
+            type_locations = type_list[type_list == types[i]].sample(frac=1).index
 
             # store all found objects as four vector in event_map
             for j, at_loc in enumerate(type_locations):
-                if j == 8:
+                if j == conf.N_BINS:
                     break
                 event_map[i][j] = to_four_vector(event[at_loc])
 
@@ -133,7 +145,9 @@ def generate_input_map(event):
 
 
 def generate_map_set(df: pd.DataFrame, save: bool = False):
-    dataset = np.zeros((len(df), (2 + 5 * 8 * 4)))
+    filename = "event_map_flattened_shuf.txt"
+    dataset = \
+        np.zeros((len(df), (conf.DATA_SIZE)))
     print("Converting dataframe to acceptable array.")
     for index, row in df.iterrows():
         bar = pb.percentage_to_bar(index / len(df) * 100)
@@ -142,7 +156,7 @@ def generate_map_set(df: pd.DataFrame, save: bool = False):
 
     if save:
         print("Saving array to file.")
-        np.savetxt("data/event_map_flattened.txt", dataset, fmt='%4e')
+        np.savetxt("data/{}".format(filename), dataset, fmt='%4e')
     else:
         return dataset
 
@@ -155,14 +169,16 @@ def generate_label_set(df: pd.DataFrame, save: bool = False):
         return labelset
 
 
-def modify_data():
+def modify_data(map_set: bool = True, label_set: bool = True):
     tvd = read_in()
 
-    generate_map_set(tvd, save=True)
-    generate_label_set(tvd, save=True)
+    if map_set:
+        generate_map_set(tvd, save=True)
+    if label_set:
+        generate_label_set(tvd, save=True)
 
 
 def load_data():
-    dataset = pd.read_csv("data/event_map_flattened.txt", header=None, sep=' ')
+    dataset = pd.read_csv("data/event_map_flattened_shuf.txt", header=None, sep=' ')
     labelset = pd.read_csv("data/labelset.txt", header=None, sep=' ')
     return dataset, labelset
