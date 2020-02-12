@@ -146,22 +146,34 @@ def generate_input_map(event):
     return return_array
 
 
-def generate_map_set(df: pd.DataFrame, save: bool = False):
-    filename = "test_wo.txt"
-    dataset = \
-        np.zeros((len(df), conf.SIZE_2D))
-    print("Converting dataframe to acceptable array.")
+def generate_map_part(df: pd.DataFrame):
+    data_set = np.zeros((len(df), conf.SIZE_2D))
 
-    start_time = time.time()
     for index, row in df.iterrows():
         bar = pb.percentage_to_bar(index / len(df) * 100)
         print(bar, end='\r')
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(generate_input_map, row)
-            dataset[index] = future.result()
-        # dataset[index] = generate_input_map(row)
-    print("Done in {} seconds".format(time.time() - start_time))
+        data_set[index] = generate_input_map(row)
+    return data_set
 
+
+def generate_map_set(df: pd.DataFrame, save: bool = False):
+    filename = "test.txt"
+    dataset = \
+        np.zeros((len(df), conf.SIZE_2D))
+    print("Converting dataframe to acceptable array.")
+    df_sections = np.array_split(df, 6)
+    data_section = np.array_split(dataset, 6)
+    # futures = [None] * 8
+    start_time = time.time()
+    dataset = generate_map_part(df)
+    # with concurrent.futures.ThreadPoolExecutor() as executor:
+    #     for i, section in enumerate(df_sections):
+    #         futures[i] = executor.submit(generate_map_part, section)
+    # for i, f in enumerate(futures):
+        # data_section[i] = f.result()
+
+    print("Done in {} seconds".format(time.time() - start_time))
+    # dataset = np.concatenate(data_section)
     if save:
         print("Saving array to file.")
         np.savetxt("data/{}".format(filename), dataset, fmt='%4e')
