@@ -3,6 +3,8 @@ import numpy as np
 import pickle
 import config as conf
 import progress_bar.progress_bar as pb
+import concurrent.futures
+import time
 
 
 def read_in(pickle_result: bool = False):
@@ -120,7 +122,7 @@ def generate_input_map(event):
     5x8x4 array containing the four-vectors of each type.
     """
     # the event map to fill up
-    event_map = np.zeros((conf.N_PARTICLES, conf.N_BINS, conf.LEN_VECTOR))
+    event_map = np.zeros((conf.N_PARTICLES+1, conf.N_BINS, conf.LEN_VECTOR))
     return_array = np.zeros(conf.SIZE_2D)
     types = ['j', 'b', 'm', 'e', 'g']  # type list to use as filter
 
@@ -137,22 +139,28 @@ def generate_input_map(event):
             for j, at_loc in enumerate(type_locations):
                 if j == conf.N_BINS:
                     break
-                event_map[i][j] = to_four_vector(event[at_loc])
+                event_map[i+1][j] = to_four_vector(event[at_loc])
 
-    return_array[:2] = np.array([met, metphi])
-    return_array[conf.N_PARAMS * conf.LEN_VECTOR:] = event_map.flatten()
+    event_map[0, 0, 0], event_map[0, 1, 0] = met, metphi
+    return_array = event_map.flatten()
     return return_array
 
 
 def generate_map_set(df: pd.DataFrame, save: bool = False):
-    filename = "event_map2d_flattened.txt"
+    filename = "test_wo.txt"
     dataset = \
         np.zeros((len(df), conf.SIZE_2D))
     print("Converting dataframe to acceptable array.")
+
+    start_time = time.time()
     for index, row in df.iterrows():
         bar = pb.percentage_to_bar(index / len(df) * 100)
         print(bar, end='\r')
-        dataset[index] = generate_input_map(row)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(generate_input_map, row)
+            dataset[index] = future.result()
+        # dataset[index] = generate_input_map(row)
+    print("Done in {} seconds".format(time.time() - start_time))
 
     if save:
         print("Saving array to file.")
