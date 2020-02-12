@@ -4,6 +4,7 @@ import pickle
 import config as conf
 import progress_bar.progress_bar as pb
 import concurrent.futures
+import analyse_data as ad
 import time
 
 
@@ -187,6 +188,20 @@ def generate_label_set(df: pd.DataFrame, save: bool = False):
         np.savetxt("data/labelset.txt", labelset, fmt='%1.0d')
     else:
         return labelset
+
+
+def remove_outliers():
+    event_map = ad.read_in()
+    labelset = np.loadtxt("data/labelset.txt")
+    to_remove_parts = [None] * len(to_clean)
+
+    to_clean = [[2, 1], [2, 2], [2, 3], [2, 4], [3, 1], [4, 1]]
+    for i, comb in enumerate(to_clean):
+        to_remove_parts[i] = ad.find_outliers(event_map, comb[0], comb[1], 4)
+    to_remove = np.concatenate(to_remove_parts, axis=1)
+    filtered_map = np.delete(event_map, to_remove)
+    labels_filtered = np.delete(labelset, to_remove)
+    np.savetxt("data/event_map_filtered.txt", filtered_map, fmt='%4e')
 
 
 def modify_data(map_set: bool = True, label_set: bool = True):

@@ -6,9 +6,10 @@ import matplotlib.pyplot as plt
 
 
 def read_in():
-    em_flat = np.loadtxt("data/event_map2d_flattened.txt", delimiter=' ')
+    em_flat = np.loadtxt("data/event_map_filtered.txt", delimiter=' ')
+    n_data_points = len(em_flat) / conf.SIZE_2D
     event_map = em_flat.reshape(
-        (100000, conf.N_PARTICLES + 1, conf.N_BINS, conf.LEN_VECTOR))
+        (n_data_points, conf.N_PARTICLES + 1, conf.N_BINS, conf.LEN_VECTOR))
     return event_map
 
 
@@ -36,13 +37,19 @@ def plot_histograms(length_vectors, stds, means, n_bins=100):
                 ax[i][j].set_ylim(-1, 1)
                 continue
             non_zero = length_vectors[:, i, j] != 0
-            bins[i, j] = ax[i][j].hist(length_vectors[non_zero, i, j], bins=n_bins,
-                                       color='black')[0]
+            bins[i, j] = \
+                ax[i][j].hist(length_vectors[non_zero, i, j], bins=n_bins,
+                              color='black')[0]
             ax[i, j].set_title("n = {}".format(bins[i, j].sum()))
 
     fig.tight_layout()
     fig.show()
 
 
-event_map = read_in()
-lengths, stds, means = calc_stats(event_map)
+def find_outliers(event_map, at_particle: int, at_bin: int, distance_filter: int):
+    length_values, std, mean = calc_stats(event_map)
+    return np.where(
+        length_values[:, at_particle, at_bin] > mean[at_particle, at_bin] + \
+        distance_filter * std[at_particle, at_bin]
+    )
+

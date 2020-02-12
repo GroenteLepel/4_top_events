@@ -1,8 +1,9 @@
 import modify_data as md
-from sklearn.model_selection import train_test_split
-import network_model as nm
-import matplotlib.pyplot as plt
-import time
+import analyse_data as ad
+# from sklearn.model_selection import train_test_split
+# import network_model as nm
+# import matplotlib.pyplot as plt
+# import time
 
 batch_size = 50000
 epochs = 40
@@ -30,4 +31,8 @@ def run_training():
 
 
 # md.modify_data(label_set=False)
-run_training()
+# run_training()
+# md.remove_outliers()
+em = ad.read_in()
+l, s, m = ad.calc_stats(em)
+ad.plot_histograms(l, s, m)
