@@ -192,16 +192,13 @@ def generate_label_set(df: pd.DataFrame, save: bool = False):
 
 def remove_outliers():
     event_map = ad.read_in()
-    labelset = np.loadtxt("data/labelset.txt")
-    to_remove_parts = [None] * len(to_clean)
 
-    to_clean = [[2, 1], [2, 2], [2, 3], [2, 4], [3, 1], [4, 1]]
-    for i, comb in enumerate(to_clean):
-        to_remove_parts[i] = ad.find_outliers(event_map, comb[0], comb[1], 4)
-    to_remove = np.concatenate(to_remove_parts, axis=1)
-    filtered_map = np.delete(event_map, to_remove)
-    labels_filtered = np.delete(labelset, to_remove)
-    np.savetxt("data/event_map_filtered.txt", filtered_map, fmt='%4e')
+    to_remove = ad.find_outliers(event_map)
+    ds, ls = load_data()
+    ds_filtered = np.delete(ds.to_numpy(), to_remove[0], axis=0)
+    ls_filtered = np.delete(ls.to_numpy(), to_remove[0], axis=0)
+    np.savetxt("data/event_map_filtered.txt", ds_filtered, fmt='%4e')
+    np.savetxt("data/labelset_filtered.txt", ls_filtered, fmt='%1.0d')
 
 
 def modify_data(map_set: bool = True, label_set: bool = True):
@@ -214,6 +211,6 @@ def modify_data(map_set: bool = True, label_set: bool = True):
 
 
 def load_data():
-    dataset = pd.read_csv("data/event_map2d_flattened.txt", header=None, sep=' ')
-    labelset = pd.read_csv("data/labelset.txt", header=None, sep=' ')
+    dataset = pd.read_csv("data/event_map_filtered.txt", header=None, sep=' ')
+    labelset = pd.read_csv("data/labelset_filtered.txt", header=None, sep=' ')
     return dataset, labelset
