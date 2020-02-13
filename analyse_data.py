@@ -6,9 +6,10 @@ import matplotlib.pyplot as plt
 
 
 def read_in():
-    em_flat = np.loadtxt("data/event_map_filtered.txt", delimiter=' ')
-    n_data_points = len(em_flat) / conf.SIZE_2D
-    event_map = em_flat.reshape(
+    # em_flat = np.loadtxt("data/event_map_filtered.txt", delimiter=' ')
+    em_flat_df = pd.read_csv("data/event_map_filtered.txt", header=None, sep=' ')
+    n_data_points = len(em_flat_df.index)
+    event_map = em_flat_df.to_numpy().reshape(
         (n_data_points, conf.N_PARTICLES + 1, conf.N_BINS, conf.LEN_VECTOR))
     return event_map
 
@@ -20,10 +21,10 @@ def calc_stats(event_map):
 
 
 def plot_histograms(length_vectors, stds, means, n_bins=100):
-    fig, ax = plt.subplots(6, 8, figsize=(20, 10))
-    bins = np.zeros((6, 8, n_bins))
-    for i in range(6):
-        for j in range(8):
+    fig, ax = plt.subplots(conf.N_PARTICLES + 1, conf.N_BINS, figsize=(20, 10))
+    bins = np.zeros((conf.N_PARTICLES + 1, conf.N_BINS, n_bins))
+    for i in range(conf.N_PARTICLES + 1):
+        for j in range(conf.N_BINS):
             if i == 0:
                 ax[i][j].set_title(j)
             if j == 0:
@@ -46,10 +47,10 @@ def plot_histograms(length_vectors, stds, means, n_bins=100):
     fig.show()
 
 
-def find_outliers(event_map, at_particle: int, at_bin: int, distance_filter: int):
+def find_outliers(event_map, at_particle: int = -1, at_bin: int = -1, distance_filter: int = 5):
     length_values, std, mean = calc_stats(event_map)
     return np.where(
-        length_values[:, at_particle, at_bin] > mean[at_particle, at_bin] + \
-        distance_filter * std[at_particle, at_bin]
+        length_values > mean + \
+        distance_filter * std
     )
 
