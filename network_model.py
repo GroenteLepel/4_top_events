@@ -82,44 +82,55 @@ def init_concatenated_model():
         )(input)
 
     # enhancing features
-    enhance_1 = layers.Conv2D(64, (1, 1),
+    enhance_1 = layers.Conv2D(48, (1, 1),
                            activation=tf.nn.leaky_relu,
                            name='1st_feature_enhancer_64x1x1x5'
                            )(reshaped)
-    enhance_2 = layers.Conv2D(64, (1, 1),
+    enhance_2 = layers.Conv2D(48, (1, 1),
                            activation=tf.nn.leaky_relu,
                            name='2nd_feature_enhancer_64x1x1x5'
                            )(enhance_1)
 
     # channel 1
-    drop11 = layers.Dropout(0.5, name='0.5_drop_1')(enhance_2)
+    drop1 = layers.Dropout(0.5,
+                           name='0.5_drop_1'
+                           )(enhance_2)
     conv1 = layers.Conv2D(32, (conf.N_PARTICLES + 1, 1),
                            activation=tf.nn.leaky_relu,
                            name='column_features_32x6x1x5'
-                           )(
-        drop11)
-    # drop2 = layers.Dropout(0.5, name='0.5_drop_')(conv1)
-    pool2 = layers.MaxPool2D(pool_size=(1, 2), name='max_of_1x2')(conv1)
-    flat1 = layers.Flatten()(pool2)
+                           )(drop1)
+    pool2 = layers.MaxPool2D(pool_size=(1, 2),
+                             name='max_of_1x2'
+                             )(conv1)
+    flat1 = layers.Flatten(name='flatten_1'
+                           )(pool2)
 
     # channel 2
-    drop21 = layers.Dropout(0.5, name='0.5_drop_2')(enhance_2)
-    conv21 = layers.Conv2D(20, (1, conf.N_BINS),
+    drop2 = layers.Dropout(0.5,
+                           name='0.5_drop_2'
+                           )(enhance_2)
+    conv2 = layers.Conv2D(20, (1, conf.N_BINS),
                            activation=tf.nn.leaky_relu,
                            name='row_features_20x1x8x5'
-                           )(drop21)
-    # drop32 = layers.Dropout(0.5, name='0.5_drop_3')(conv21)
-    pool3 = layers.MaxPool2D(pool_size=(2, 1), name='max_of_2x1')(conv21)
-    flat2 = layers.Flatten()(pool3)
+                           )(drop2)
+    pool3 = layers.MaxPool2D(pool_size=(2, 1),
+                             name='max_of_2x1'
+                             )(conv2)
+    flat2 = layers.Flatten(name='flatten_2'
+                           )(pool3)
 
     # channel 3
-    drop31 = layers.Dropout(0.5, name='0.5_drop_3')(enhance_2)
+    drop3 = layers.Dropout(0.5,
+                           name='0.5_drop_3'
+                           )(enhance_2)
     conv3 = layers.Conv2D(24, (3, 3),
                            activation=tf.nn.leaky_relu,
                            name='global_features_3x3x5'
-                           )(drop31)
-    pool4 = layers.MaxPool2D()(conv3)
-    flat3 = layers.Flatten()(pool4)
+                           )(drop3)
+    pool3 = layers.MaxPool2D(name='max_of_2x2'
+                             )(conv3)
+    flat3 = layers.Flatten(name='flatten_3'
+                           )(pool3)
 
     # merge
     merged = layers.concatenate([flat1, flat2, flat3])
