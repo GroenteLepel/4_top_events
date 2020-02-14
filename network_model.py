@@ -73,33 +73,49 @@ def init_model_2d():
 
 def init_concatenated_model():
     # generating inputs
-    input = layers.Input(shape=(conf.SIZE_2D,))
+    input = layers.Input(shape=(conf.SIZE_2D,), name='flattened input')
     reshaped = layers.Reshape(
         (conf.N_PARTICLES + 1, conf.N_BINS, conf.LEN_VECTOR),
+        name='main reshape'
         )(input)
 
     # channel 1
-    conv11 = layers.Conv2D(64, (1, 1), activation=tf.nn.leaky_relu)(reshaped)
-    conv12 = layers.Conv2D(64, (1, 1), activation=tf.nn.leaky_relu)(conv11)
-    drop1 = layers.Dropout(0.5)(conv12)
-    pool1 = layers.MaxPool2D()(drop1)
+    conv11 = layers.Conv2D(64, (1, 1),
+                           activation=tf.nn.leaky_relu,
+                           name='feature enhancer (64x1x1x5)'
+                           )(reshaped)
+    conv12 = layers.Conv2D(64, (1, 1),
+                           activation=tf.nn.leaky_relu,
+                           name='feature enhancer (64x1x1x5)'
+                           )(conv11)
+    drop1 = layers.Dropout(0.5, name='0.5 drop')(conv12)
+    pool1 = layers.MaxPool2D(name='max of (2, 2)')(drop1)
     flat1 = layers.Flatten()(pool1)
 
     # channel 2
-    conv21 = layers.Conv2D(32, (conf.N_PARTICLES + 1, 1), activation=tf.nn.leaky_relu)(
+    conv21 = layers.Conv2D(32, (conf.N_PARTICLES + 1, 1),
+                           activation=tf.nn.leaky_relu,
+                           name='column features (32x6x1x5)'
+                           )(
         reshaped)
-    drop2 = layers.Dropout(0.5)(conv21)
-    pool2 = layers.MaxPool2D(pool_size=(1, 2))(drop2)
+    drop2 = layers.Dropout(0.5, name='0.5 drop')(conv21)
+    pool2 = layers.MaxPool2D(pool_size=(1, 2), name='max of (1, 2)')(drop2)
     flat2 = layers.Flatten()(pool2)
 
     # channel 3
-    conv31 = layers.Conv2D(20, (1, conf.N_BINS), activation=tf.nn.leaky_relu)(reshaped)
-    drop3 = layers.Dropout(0.5)(conv31)
-    pool3 = layers.MaxPool2D(pool_size=(2, 1))(drop3)
+    conv31 = layers.Conv2D(20, (1, conf.N_BINS),
+                           activation=tf.nn.leaky_relu,
+                           name='row features (20x1x8x5)'
+                           )(reshaped)
+    drop3 = layers.Dropout(0.5, name='0.5 drop')(conv31)
+    pool3 = layers.MaxPool2D(pool_size=(2, 1), name='max of (2, 1)')(drop3)
     flat3 = layers.Flatten()(pool3)
 
     # channel 4
-    conv41 = layers.Conv2D(24, (3, 3), activation=tf.nn.leaky_relu)(drop1)
+    conv41 = layers.Conv2D(24, (3, 3),
+                           activation=tf.nn.leaky_relu,
+                           name='global features (3x3x5)'
+                           )(drop1)
     pool4 = layers.MaxPool2D()(conv41)
     flat4 = layers.Flatten()(pool4)
 
@@ -107,8 +123,14 @@ def init_concatenated_model():
     merged = layers.concatenate([flat1, flat2, flat3, flat4])
 
     # interpretation
-    dense1 = layers.Dense(16, activation=tf.nn.leaky_relu)(merged)
-    outputs = layers.Dense(1, activation='sigmoid')(dense1)
+    dense1 = layers.Dense(16,
+                          activation=tf.nn.leaky_relu,
+                          name='Leaky ReLU'
+                          )(merged)
+    outputs = layers.Dense(1,
+                           activation='sigmoid',
+                           name='sigmoid classification'
+                           )(dense1)
     model = models.Model(inputs=input, outputs=outputs)
 
     # compile
