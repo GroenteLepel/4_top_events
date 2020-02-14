@@ -37,31 +37,44 @@ def init_model_2d():
                        input_shape=(conf.SIZE_2D,)
                        ))
     model.add(layers.Conv2D(64, (1, 1),
-                            activation=tf.nn.leaky_relu
+                            activation=tf.nn.leaky_relu,
+                            name='1st_feature_enhancer_64x1x1x5'
                             ))
     model.add(layers.Conv2D(64, (1, 1),
-                            activation=tf.nn.leaky_relu
+                            activation=tf.nn.leaky_relu,
+                            name='2nd_feature_enhancer_64x1x1x5'
                             ))
-    model.add(layers.Conv2D(128, (2, 2)))
+    model.add(layers.Conv2D(128, (2, 2),
+                            activation=tf.nn.leaky_relu,
+                            name='2x2_features'))
     model.add(layers.Conv2D(128, (1, 1),
-                            activation=tf.nn.leaky_relu
+                            activation=tf.nn.leaky_relu,
+                            name='3d_feature_enhancer_128x1x1x5'
                             ))
     model.add(layers.Conv2D(128, (1, 1),
-                            activation=tf.nn.leaky_relu
+                            activation=tf.nn.leaky_relu,
+                            name='4th_feature_enhancer_128x1x1x5'
                             ))
-    model.add(layers.MaxPool2D())
+    model.add(layers.MaxPool2D(
+        name='max_2x2'
+    ))
     model.add(layers.Conv2D(56, (1, 1),
-                            activation=tf.nn.leaky_relu
+                            activation=tf.nn.leaky_relu,
+                            name='5th_feature_enhancer_56x1x1x5'
                             ))
     model.add(layers.Conv2D(56, (1, 1),
-                            activation=tf.nn.leaky_relu
+                            activation=tf.nn.leaky_relu,
+                            name='6th_feature_enhancer_56x1x1x5'
                             ))
-    model.add(layers.Flatten())
+    model.add(layers.Flatten(
+        name='flatten'
+    ))
     model.add(layers.Dense(100,
-                           activation=tf.nn.leaky_relu
+                           activation=tf.nn.leaky_relu,
+                           name='leaky_relu'
                            ))
     model.add(layers.Dense(1,
-                           activation='sigmoid'
+                           activation='sigmoid_classification'
                            ))
     model.compile(optimizer='nadam',
                   loss='binary_crossentropy',
@@ -84,11 +97,11 @@ def init_concatenated_model():
     # enhancing features
     enhance_1 = layers.Conv2D(48, (1, 1),
                            activation=tf.nn.leaky_relu,
-                           name='1st_feature_enhancer_64x1x1x5'
+                           name='1st_feature_enhancer_48x1x1x5'
                            )(reshaped)
     enhance_2 = layers.Conv2D(48, (1, 1),
                            activation=tf.nn.leaky_relu,
-                           name='2nd_feature_enhancer_64x1x1x5'
+                           name='2nd_feature_enhancer_48x1x1x5'
                            )(enhance_1)
 
     # channel 1
