@@ -1,4 +1,14 @@
-PICKLEJAR = "data/picklejar/"
+# folders
+DATA_FOLDER = "data/"
+PICKLEJAR = "{}picklejar/".format(DATA_FOLDER)
+
+# file names
+__data_filename = "event_map.txt"
+__label_filename = "labelset.txt"
+DATA_FILE = "{}{}".format(DATA_FOLDER, __data_filename)
+LABEL_FILE = "{}{}".format(DATA_FOLDER, __label_filename)
+
+# constants
 N_BINS = 8  # number of bins per particle in the stored event map
 LEN_VECTOR = 5  # length of the four-vector plus the charge element
 N_PARTICLES = 5  # amount of particles in the datafile, j, b, g, m, e etc
