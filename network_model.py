@@ -1,5 +1,3 @@
-import pandas as pd
-import modify_data as md
 import tensorflow as tf
 from tensorflow.keras import layers
 import config as conf
@@ -7,30 +5,7 @@ from tensorflow.keras import models
 import ipykernel  # for the verbose output of tensorflow
 
 
-def init_model_1d():
-    model = tf.keras.Sequential()
-    model.add(layers.Reshape((conf.SIZE_1D, 1), input_shape=(conf.SIZE_1D,)
-                             ))
-    model.add(layers.Conv1D(64, 24,
-                            activation=tf.nn.leaky_relu
-                            ))
-    model.add(layers.Conv1D(32, 12,
-                            activation='tanh'
-                            ))
-    model.add(layers.Flatten())
-    model.add(layers.Dense(16,
-                           activation=tf.nn.leaky_relu
-                           ))
-    model.add(layers.Dense(1,
-                           activation='sigmoid'
-                           ))
-    model.compile(optimizer='nadam',
-                  loss='binary_crossentropy',
-                  metrics=['accuracy'])
-    return model
-
-
-def init_model_2d():
+def init_sequential_model():
     model = tf.keras.Sequential()
     model.add(
         layers.Reshape((conf.N_PARTICLES + 1, conf.N_BINS, conf.LEN_VECTOR),
