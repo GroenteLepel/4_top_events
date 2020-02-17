@@ -2,12 +2,17 @@ import modify_data as md
 import config as conf
 import tensorflow as tf
 from tensorflow.keras.models import load_model
+import analyse_data as ad
+import os
+import sys
+
+sys.path.extend([os.getcwd()])
 
 # This script assumes that the data to test the trained model on looks similar
 #  to the data provided in the exercise.
 
 # use md.read_in() to read in the .csv file
-unmodified_data = md.read_in()
+unmodified_data = md.read_in(file_to_read="TrainingValidationData.csv")
 
 # writes the modified data and labels to two separate files
 md.modify_data(unmodified_data)
