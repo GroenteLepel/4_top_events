@@ -1,38 +1,27 @@
 import modify_data as md
-import analyse_data as ad
-# from sklearn.model_selection import train_test_split
-# import network_model as nm
-# import matplotlib.pyplot as plt
-# import time
+import config as conf
+import tensorflow as tf
+from tensorflow.keras.models import load_model
 
-batch_size = 50000
-epochs = 40
+# This script assumes that the data to test the trained model on looks similar
+#  to the data provided in the exercise.
 
+# use md.read_in() to read in the .csv file
+unmodified_data = md.read_in()
 
-def run_training():
-    nm.set_gpu_growth()
-    ds, ls = md.load_data()
+# writes the modified data and labels to two separate files
+md.modify_data(unmodified_data)
 
-    train_ds, val_ds, train_ls, val_ls = \
-        train_test_split(ds[:batch_size], ls[:batch_size], train_size=0.8)
+# after modify_data() has run, the load_data() command loads in the saved files
+data, labels = md.load_data()
 
-    test_model = nm.init_model_2d()
+# load in the desired model
+# to_load = "sequential_model.h5"
+to_load = "concatenated_model.h5"
+model = load_model("{}{}".format(conf.DATA_FOLDER, to_load),
+                   custom_objects={'leaky_relu': tf.nn.leaky_relu})
+model.summary()
 
-    history = test_model.fit(train_ds, train_ls, epochs=epochs,
-                             validation_data=(val_ds, val_ls))
-
-    current_time = time.gmtime()
-    plt.title("{}:{},{}".format(current_time.tm_hour, current_time.tm_min,
-                                current_time.tm_sec))
-    plt.plot(history.history['loss'], label='train')
-    plt.plot(history.history['val_loss'], label='val')
-    plt.legend()
-    plt.show()
-
-
-# md.modify_data(label_set=False)
-# run_training()
-# md.remove_outliers()
-em = ad.read_in()
-l, s, m = ad.calc_stats(em)
-ad.plot_histograms(l, s, m)
+# chose whether to evaluate or predict
+results = model.evaluate(data, labels)
+# predictions = model.predict(data)
