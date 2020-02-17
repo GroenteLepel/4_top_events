@@ -10,7 +10,7 @@ def read_in():
     where all these variables are defined in the config file.
     :return:
     """
-    em_flat_df = pd.read_csv("{}{}".format(conf.DATA_FOLDER, conf.DATA_FILE),
+    em_flat_df = pd.read_csv("{}".format(conf.DATA_FILE),
                              header=None, sep=' ')
     n_data_points = len(em_flat_df.index)
     event_map = em_flat_df.to_numpy().reshape(
