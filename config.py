@@ -1,6 +1,9 @@
+import os
+
 # folders
-DATA_FOLDER = "data/"
-PICKLEJAR = "{}picklejar/".format(DATA_FOLDER)
+SEP = os.path.abspath(os.sep)
+DATA_FOLDER = "data{}".format(SEP)
+PICKLEJAR = "{}picklejar{}".format(DATA_FOLDER, SEP)
 
 # file names
 __data_filename = "event_map.txt"
