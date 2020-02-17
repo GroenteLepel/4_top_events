@@ -3,12 +3,19 @@ import numpy as np
 import pickle
 import config as conf
 import progress_bar.progress_bar as pb
-import concurrent.futures
 import analyse_data as ad
-import time
 
 
-def read_in(pickle_result: bool = False):
+def read_in(file_to_read: str = None, pickle_result: bool = False):
+    """
+    This function reads in the .csv data file provided for the exercise.
+    :param file_to_read: string indicating the file located in the data folder
+    from the config file which needs to be read.
+    :param pickle_result: boolean indicated if the resulting modified DataFrame
+    must be pickled.
+    :return: DataFrame object containing the labels, missing energies and
+    observed objects.
+    """
     # Running the read_csv command once with parameter error_bad_names=False
     #  resulted in the command skipping certain lines, because it found some
     #  that had length up to 18. This helped me figuring out what the max
@@ -17,9 +24,13 @@ def read_in(pickle_result: bool = False):
     header = ['event ID', 'process ID', 'event weight', 'MET', 'METphi']
     objects = list(range(1, 14))
 
-    df = pd.read_csv("data/TrainingValidationData.csv", sep=';', header=None,
+    if file_to_read is None:
+        file_to_read = "TrainingValidationData.csv"
+
+    df = pd.read_csv("{}{}".format(conf.DATA_FOLDER, file_to_read),
+                     sep=';', header=None,
                      names=header + objects)
-    df = df.fillna(0)  # zero-padding the empty columns
+    df = df.fillna(0)  # zero-padding the empty columns, replacing NaN's with 0
     change_labels(df)  # change the labels from ttbar and 4top to 0 and 1
     df = df.drop(columns=['event ID', 'event weight'])
 
@@ -33,8 +44,9 @@ def change_labels(df):
     """
     Change the labels in the second column of the dataframe from ttbar and 4top
     to respectively 0 and 1.
-    :param df:
-    :return:
+    :param df: pandas.DataFrame object which contains the labels defined by
+    'process ID'. Locates the 'ttbar' and '4top' events and replaces these with
+    0s and 1s, respectively.
     """
     # df[1].unique() looks for all possible values in that column, this returns
     #  array(['ttbar', '4top'], dtype=object), meaning that I only have to
@@ -124,11 +136,13 @@ def generate_input_map(event):
     """
     # the event map to fill up
     event_map = np.zeros((conf.N_PARTICLES+1, conf.N_BINS, conf.LEN_VECTOR))
-    return_array = np.zeros(conf.SIZE_2D)
     types = ['j', 'b', 'm', 'e', 'g']  # type list to use as filter
 
-    # generate Series object containing all the object types as characters.
-    met, metphi = event[['MET', 'METphi']]
+    # store the missing energies in the first two categories
+    event_map[0, 0, 0], event_map[0, 1, 0] = event[['MET', 'METphi']]
+
+    # generate Series object containing all the object types as characters, and
+    #  check if there is any object observed, otherwise the observation is empty
     if event[1] != 0:
         type_list = event[3:17].str.slice(stop=1)
 
@@ -136,15 +150,14 @@ def generate_input_map(event):
             # find all the indices where a certain type of object is located
             type_locations = type_list[type_list == types[i]].index
 
-            # store all found objects as four vector in event_map
+            # store all found objects as five vector in event_map
             for j, at_loc in enumerate(type_locations):
                 if j == conf.N_BINS:
+                    # throw away items if bin capacity has been reached
                     break
                 event_map[i+1][j] = to_four_vector(event[at_loc])
 
-    event_map[0, 0, 0], event_map[0, 1, 0] = met, metphi
-    return_array = event_map.flatten()
-    return return_array
+    return event_map.flatten()
 
 
 def generate_map_part(df: pd.DataFrame):
@@ -157,27 +170,19 @@ def generate_map_part(df: pd.DataFrame):
     return data_set
 
 
-def generate_map_set(df: pd.DataFrame, save: bool = False):
-    filename = "test.txt"
-    dataset = \
-        np.zeros((len(df), conf.SIZE_2D))
+def generate_map_set(df: pd.DataFrame,
+                     save: bool = False, file_name: str = None):
     print("Converting dataframe to acceptable array.")
-    df_sections = np.array_split(df, 6)
-    data_section = np.array_split(dataset, 6)
-    # futures = [None] * 8
-    start_time = time.time()
     dataset = generate_map_part(df)
-    # with concurrent.futures.ThreadPoolExecutor() as executor:
-    #     for i, section in enumerate(df_sections):
-    #         futures[i] = executor.submit(generate_map_part, section)
-    # for i, f in enumerate(futures):
-        # data_section[i] = f.result()
 
-    print("Done in {} seconds".format(time.time() - start_time))
-    # dataset = np.concatenate(data_section)
     if save:
         print("Saving array to file.")
-        np.savetxt("data/{}".format(filename), dataset, fmt='%4e')
+        if file_name is None:
+            path = conf.DATA_FILE
+        else:
+            path = "{}{}".format(conf.DATA_FOLDER, file_name)
+        np.savetxt("{}".format(path), dataset, fmt='%4e')
+        print("Saved {}".format(path))
     else:
         return dataset
 
@@ -185,7 +190,8 @@ def generate_map_set(df: pd.DataFrame, save: bool = False):
 def generate_label_set(df: pd.DataFrame, save: bool = False):
     labelset = np.asarray(df['process ID'].to_numpy())
     if save:
-        np.savetxt("data/labelset.txt", labelset, fmt='%1.0d')
+        np.savetxt("{}".format(conf.LABEL_FILE), labelset, fmt='%1.0d')
+        print("Saved {}".format(conf.LABEL_FILE))
     else:
         return labelset
 
@@ -197,12 +203,16 @@ def remove_outliers():
     ds, ls = load_data()
     ds_filtered = np.delete(ds.to_numpy(), to_remove[0], axis=0)
     ls_filtered = np.delete(ls.to_numpy(), to_remove[0], axis=0)
-    np.savetxt("data/event_map_filtered.txt", ds_filtered, fmt='%4e')
-    np.savetxt("data/labelset_filtered.txt", ls_filtered, fmt='%1.0d')
+    np.savetxt("{}_filtered.txt".format(conf.DATA_FILE),
+               ds_filtered, fmt='%4e')
+    np.savetxt("{}_filtered.txt".format(conf.LABEL_FILE),
+               ls_filtered, fmt='%1.0d')
 
 
-def modify_data(map_set: bool = True, label_set: bool = True):
-    tvd = read_in()
+def modify_data(tvd: pd.DataFrame = None,
+                map_set: bool = True, label_set: bool = True):
+    if tvd is None:
+        tvd = read_in()
 
     if map_set:
         generate_map_set(tvd, save=True)
@@ -211,6 +221,6 @@ def modify_data(map_set: bool = True, label_set: bool = True):
 
 
 def load_data():
-    dataset = pd.read_csv("data/event_map_filtered.txt", header=None, sep=' ')
-    labelset = pd.read_csv("data/labelset_filtered.txt", header=None, sep=' ')
+    dataset = pd.read_csv(conf.DATA_FILE, header=None, sep=' ')
+    labelset = pd.read_csv(conf.LABEL_FILE, header=None, sep=' ')
     return dataset, labelset
