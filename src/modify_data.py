@@ -127,7 +127,7 @@ def to_four_vector(obj: str):
 def generate_input_map(event):
     """
     Generates an input map based on the given event. All possible objects are:
-    j, b, m, e, p (jet, b-jet, muon, electron, photon) and will coincide with
+    j, b, m, e, g (jet, b-jet, muon, electron, photon) and will coincide with
     rows 1 to 5 of the map respectively. Each row can have 8 options max.
     :return: array containing the first two values MET and METPHI, and flattened
     5x8x4 array containing the four-vectors of each type.
