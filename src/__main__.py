@@ -1,8 +1,6 @@
-import modify_data as md
-import config as conf
+from src import modify_data as md, config as conf
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-import analyse_data as ad
 import os
 import sys
 

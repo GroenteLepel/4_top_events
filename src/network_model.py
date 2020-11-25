@@ -1,8 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import layers
-import config as conf
+from src import config as conf
 from tensorflow.keras import models
-import ipykernel  # for the verbose output of tensorflow
 
 
 def init_sequential_model():

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from tensorflow.keras.callbacks import History
-import config as conf
+from src import config as conf
 
 
 def plot(hist: History,

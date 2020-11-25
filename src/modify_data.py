@@ -1,9 +1,7 @@
 import pandas as pd
 import numpy as np
 import pickle
-import config as conf
-import progress_bar.progress_bar as pb
-import analyse_data as ad
+from src import analyse_data as ad, config as conf, progress_bar as pb
 
 
 def read_in(file_to_read: str = None, pickle_result: bool = False):

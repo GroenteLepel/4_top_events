@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import config as conf
+from src import config as conf
 
 
 def plot(length_vectors, stds, means, n_bins: int = 50,
